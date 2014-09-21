@@ -1,0 +1,7 @@
+{
+    "dependencies": {},
+    "private": true,
+    "description": "An SMTP Server",
+    "name": "haraka-example-docker",
+    "version": "0.0.1"
+}
