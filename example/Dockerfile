@@ -3,6 +3,3 @@
 
 FROM gbleux/haraka
 MAINTAINER Gordon Bleux <gordon.bleux+dh@gmail.com> (@gbleux)
-
-VOLUME ["/var/haraka"]
-EXPOSE 25

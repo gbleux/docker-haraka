@@ -1,1 +1,4 @@
-test_queue
+rcpt_to/catch_all
+rcpt_to.in_host_list
+
+queue/file
