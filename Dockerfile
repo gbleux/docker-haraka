@@ -1,4 +1,4 @@
-# VERSION           0.0.2
+# VERSION           0.0.3
 # DOCKER-VERSION    1.2.0
 
 FROM node
