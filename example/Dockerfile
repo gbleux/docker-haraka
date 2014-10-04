@@ -1,4 +1,4 @@
-# VERSION           0.0.1
+# VERSION           0.0.2
 # DOCKER-VERSION    1.2.0
 
 FROM gbleux/haraka
