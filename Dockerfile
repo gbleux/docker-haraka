@@ -12,9 +12,6 @@ ENV HOME /tmp
 RUN npm install -g Haraka
 RUN haraka --install /app
 
-COPY docker-entrypoint.sh /usr/local/bin/haraka-docker
-RUN chmod 0755 /usr/local/bin/haraka-docker
-
 # the application is not started as this user,
 # but Haraka can be configured to drop its privileges
 # via smtp.ini
@@ -43,7 +40,7 @@ VOLUME ["/logs", "/data"]
 
 EXPOSE 25
 
-ENTRYPOINT ["/usr/local/bin/haraka-docker"]
+ENTRYPOINT ["/usr/local/bin/haraka", "--configs", "/app"]
 CMD []
 
 ONBUILD COPY . /app

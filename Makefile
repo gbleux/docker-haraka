@@ -48,10 +48,10 @@ clean:
 	rm -r $(VOLATILE_DIR)
 
 $(VOLATILE_DIR)/data:
-	mkdir -p $@
+	mkdir -p $@ && chmod 0777 $@
 
 $(VOLATILE_DIR)/logs:
-	mkdir -p $@
+	mkdir -p $@ && chmod 0777 $@
 
 .PHONY: clean send-mail
 .PHONY: build build-example
