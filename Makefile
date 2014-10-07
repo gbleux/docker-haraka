@@ -9,6 +9,12 @@ VOLATILE_DIR = $(abspath volatile)
 
 DOCKER ?= docker
 SWAKS ?= swaks
+RM_R ?= rm -r
+MKDIR_P ?= mkdir -p
+CHMOD ?= chmod
+
+SHELL ?= /bin/sh
+CONTAINER_SHELL ?= $(SHELL)
 
 build:
 	$(DOCKER) build \
@@ -22,9 +28,9 @@ build-example:
 		-t $(EXAMPLE_TAG) \
 		./example
 
-run:
+run: $(VOLATILE_DIR)/data $(VOLATILE_DIR)/logs
 	$(DOCKER) run \
-		--rm \
+		--detach \
 		--name $(IMAGE_NAME) \
 		$(IMAGE_TAG)
 
@@ -38,27 +44,41 @@ run-example: $(VOLATILE_DIR)/data $(VOLATILE_DIR)/logs
 		$(EXAMPLE_TAG)
 
 run-shell:
-	$(DOCKER) run \
+	-$(DOCKER) run \
 		--rm \
 		--tty \
 		--interactive \
-		--name $(IMAGE_NAME) \
-		--entrypoint /bin/sh \
+		--entrypoint $(CONTAINER_SHELL) \
 		$(IMAGE_TAG) -l
+
+stop:
+	$(DOCKER) stop \
+		$(IMAGE_NAME)
+
+stop-example:
+	$(DOCKER) stop \
+		$(EXAMPLE_NAME)
 
 send-mail:
 	$(SWAKS) --to haraka@example.com \
 		--server 127.0.0.1:1025
 
 clean:
-	rm -r $(VOLATILE_DIR)
+	$(RM_R) $(VOLATILE_DIR)
+
+clean-containers:
+	-$(DOCKER) rm --force $(IMAGE_NAME)
+	-$(DOCKER) rm --force $(EXAMPLE_NAME)
 
 $(VOLATILE_DIR)/data:
-	mkdir -p $@ && chmod 0777 $@
+	-$(MKDIR_P) $@
+	$(CHMOD) 0777 $@
 
 $(VOLATILE_DIR)/logs:
-	mkdir -p $@ && chmod 0777 $@
+	-$(MKDIR_P) $@
+	$(CHMOD) 0777 $@
 
-.PHONY: clean send-mail
+.PHONY: clean clean-containers send-mail
 .PHONY: build build-example
 .PHONY: run run-shell run-example
+.PHONY: stop stop-example
