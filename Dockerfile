@@ -43,6 +43,3 @@ EXPOSE 25
 
 ENTRYPOINT ["/usr/local/bin/haraka-wrapper", "--configs", "/app"]
 CMD []
-
-ONBUILD COPY . /app
-ONBUILD RUN npm install

@@ -22,6 +22,12 @@ build:
 		-t $(IMAGE_TAG) \
 		.
 
+build-onbuild:
+	$(DOCKER) build \
+		--rm \
+		-t $(IMAGE_TAG):onbuild \
+		./onbuild
+
 build-example:
 	$(DOCKER) build \
 		--rm \
@@ -79,6 +85,6 @@ $(VOLATILE_DIR)/logs:
 	$(CHMOD) 0777 $@
 
 .PHONY: clean clean-containers send-mail
-.PHONY: build build-example
+.PHONY: build build-onbuild build-example
 .PHONY: run run-shell run-example
 .PHONY: stop stop-example
