@@ -1,7 +1,7 @@
-# VERSION           0.0.3
+# VERSION           0.0.4
 # DOCKER-VERSION    1.2.0
 
-FROM node
+FROM node:0.10
 MAINTAINER Gordon Bleux <gordon.bleux+dh@gmail.com> (@gbleux)
 
 # node-gyp emits lots of warnings if HOME is set to /
@@ -9,7 +9,7 @@ ENV HOME /tmp
 
 # install haraka binary to /usr/local/bin
 # (which is already part of PATH)
-RUN npm install -g Haraka
+RUN npm install -g Haraka@2.5.0
 RUN haraka --install /app
 
 # the application is not started as this user,
@@ -24,6 +24,7 @@ RUN groupadd -r haraka && \
             -M \
             haraka
 
+COPY haraka-wrapper /usr/local/bin/haraka-wrapper
 COPY config /app/config
 RUN mkdir -p /app && \
     mkdir -p /logs && \
@@ -40,7 +41,7 @@ VOLUME ["/logs", "/data"]
 
 EXPOSE 25
 
-ENTRYPOINT ["/usr/local/bin/haraka", "--configs", "/app"]
+ENTRYPOINT ["/usr/local/bin/haraka-wrapper", "--configs", "/app"]
 CMD []
 
 ONBUILD COPY . /app

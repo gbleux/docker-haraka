@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# a wrapper script for the Haraka server process. it serves two purposes
+# * ensure proper ownership and permissions of the persistence directories
+# * capture the log statements from stdout and writes it to /logs
+#
+# the ownership and permissions flags is required, as docker maintains
+# the settings from the host once a volume is mounted. the userid will
+# most likely not match and the default bits of 0755 will prevent Haraka
+# to write any data. the permission flags can be defined via the
+# environment variable DOCKER_VOLUMES_CHMOD and the ownership via
+# DOCKER_VOLUMES_CHOWN. if a variable is not defined, its respective
+# action is not performed and the volume directories remain unchanged.
+#
+# logging to file is supported by Haraka, but only in daemon mode. this
+# would cause the container to exit immediately. the SMTP server is
+# therefor run in the forground, which causes log messages to end up
+# in stdout. the wrapper script redirects it to files in /logs. in order
+# to preserve log files from previous runs, a new logfile is created,
+# together with a symlink pointing to the current file. the name of the
+# log file can be configured via the environment variable
+# HARAKA_LOG_DATE_FORMAT. its content is expected to be a valid
+# date (1) format pattern.
+#
+
+FILENAME_UNIQUE=`date +%s`
+HARAKA_LOG="haraka-latest.log"
+
+if test "x$HARAKA_LOG_DATE_FORMAT" != "x";then
+    FILENAME_UNIQUE=`date +"$HARAKA_LOG_DATE_FORMAT"`
+fi
+
+# remove symlink in case of persistent mount
+test -e /logs/haraka.log && rm -f /logs/haraka.log
+# link is dead for now, but will exist once the server is running
+HARAKA_LOG="haraka-$FILENAME_UNIQUE.log"
+ln -s /logs/$HARAKA_LOG /logs/haraka.log
+
+if test "x$DOCKER_VOLUMES_CHOWN" != "x";then
+    chown -R $DOCKER_VOLUMES_CHOWN /logs && \
+    chown -R $DOCKER_VOLUMES_CHOWN /data || exit 1
+fi
+
+if test "x$DOCKER_VOLUMES_CHMOD" != "x";then
+    chmod "$DOCKER_VOLUMES_CHMOD" /logs && \
+    chmod "$DOCKER_VOLUMES_CHMOD" /data || exit 1
+fi
+
+exec /usr/local/bin/haraka "$@" 2>&1 | tee "/logs/$HARAKA_LOG"
