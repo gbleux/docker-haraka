@@ -6,10 +6,11 @@ MAINTAINER Gordon Bleux <gordon.bleux+dh@gmail.com> (@gbleux)
 
 # node-gyp emits lots of warnings if HOME is set to /
 ENV HOME /tmp
+ENV HARAKA_VERSION 2.5.0
 
 # install haraka binary to /usr/local/bin
 # (which is already part of PATH)
-RUN npm install -g Haraka@2.5.0
+RUN npm install -g Haraka@$HARAKA_VERSION
 RUN haraka --install /app
 
 # the application is not started as this user,
