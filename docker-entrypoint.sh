@@ -1,8 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 #
-# a wrapper script for the Haraka server process. it serves two purposes
+# a wrapper script for the Haraka server process. when invoked with
+# 'haraka' as first argument, it performs two additional steps:
 # * ensure proper ownership and permissions of the persistence directories
 # * capture the log statements from stdout and writes it to /logs
+#
+# all other arguments are passed through to the sub-command.
 #
 # the ownership and permissions flags is required, as docker maintains
 # the settings from the host once a volume is mounted. the userid will
@@ -23,27 +26,50 @@
 # date (1) format pattern.
 #
 
+set -e
+
 FILENAME_UNIQUE=`date +%s`
 HARAKA_LOG="haraka-latest.log"
 
-if test "x$HARAKA_LOG_DATE_FORMAT" != "x";then
-    FILENAME_UNIQUE=`date +"$HARAKA_LOG_DATE_FORMAT"`
+function haraka_log_rotate() {
+    # remove symlink in case of persistent mount
+    test -e "$HARAKA_LOGS/haraka.log" && rm -f "$HARAKA_LOGS/haraka.log"
+    touch "$HARAKA_LOGS/$1" && ln -s "$HARAKA_LOGS/$1" "$HARAKA_LOGS/haraka.log"
+}
+
+function haraka_chown() {
+    chown -R "$1" "$HARAKA_LOGS" && \
+    chown -R "$1" "$HARAKA_DATA"
+}
+
+function haraka_chmod() {
+    chmod "$1" "$HARAKA_LOGS" && \
+    chmod "$1" "$HARAKA_DATA"
+}
+
+function haraka_bootstrap() {
+    haraka_log_rotate "$1"
+
+    if test "x$DOCKER_VOLUMES_CHOWN" != "x";then
+        haraka_chown "$DOCKER_VOLUMES_CHOWN"
+    fi
+
+    if test "x$DOCKER_VOLUMES_CHMOD" != "x";then
+        haraka_chmod "$DOCKER_VOLUMES_CHMOD"
+    fi
+}
+
+
+if test "$1" = 'haraka' -o "$#" -eq 0; then
+    if test "x$HARAKA_LOG_DATE_FORMAT" != "x";then
+        FILENAME_UNIQUE=`date +"$HARAKA_LOG_DATE_FORMAT"`
+    fi
+
+    HARAKA_LOG="haraka-${FILENAME_UNIQUE}.log"
+
+    haraka_bootstrap "$HARAKA_LOG"
+
+    exec haraka "$@" 2>&1 | tee "$HARAKA_LOGS/$HARAKA_LOG"
+else
+    exec "$@"
 fi
-
-# remove symlink in case of persistent mount
-test -e /logs/haraka.log && rm -f /logs/haraka.log
-# link is dead for now, but will exist once the server is running
-HARAKA_LOG="haraka-$FILENAME_UNIQUE.log"
-ln -s /logs/$HARAKA_LOG /logs/haraka.log
-
-if test "x$DOCKER_VOLUMES_CHOWN" != "x";then
-    chown -R $DOCKER_VOLUMES_CHOWN /logs && \
-    chown -R $DOCKER_VOLUMES_CHOWN /data || exit 1
-fi
-
-if test "x$DOCKER_VOLUMES_CHMOD" != "x";then
-    chmod "$DOCKER_VOLUMES_CHMOD" /logs && \
-    chmod "$DOCKER_VOLUMES_CHMOD" /data || exit 1
-fi
-
-exec /usr/local/bin/haraka "$@" 2>&1 | tee "/logs/$HARAKA_LOG"

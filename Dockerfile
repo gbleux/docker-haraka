@@ -4,43 +4,44 @@
 FROM node:0.10
 MAINTAINER Gordon Bleux <gordon.bleux+dh@gmail.com> (@gbleux)
 
+ENV PATH /usr/local/bin:$PATH
+ENV HARAKA_VERSION 2.5.0
+ENV HARAKA_HOME /app
+ENV HARAKA_LOGS /logs
+ENV HARAKA_DATA /data
+
 # node-gyp emits lots of warnings if HOME is set to /
 ENV HOME /tmp
-ENV HARAKA_VERSION 2.5.0
-
-# install haraka binary to /usr/local/bin
-# (which is already part of PATH)
-RUN npm install -g Haraka@$HARAKA_VERSION
-RUN haraka --install /app
+RUN npm install -g "Haraka@$HARAKA_VERSION"
+RUN haraka --install "$HARAKA_HOME"
 
 # the application is not started as this user,
 # but Haraka can be configured to drop its privileges
 # via smtp.ini
 RUN groupadd -r haraka && \
     useradd --comment "Haraka Server User" \
-            --home /app \
+            --home "$HARAKA_HOME" \
             --shell /bin/false \
             --gid haraka \
             -r \
             -M \
             haraka
 
-COPY haraka-wrapper /usr/local/bin/haraka-wrapper
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 COPY config /app/config
-RUN mkdir -p /app && \
-    mkdir -p /logs && \
-    mkdir -p /data && \
-    chmod -R 0777 /logs && \
-    chmod -R 0777 /data && \
-    chown -R haraka:haraka /app /logs /data
+RUN mkdir -p "$HARAKA_HOME" && \
+    mkdir -p "$HARAKA_LOGS" && \
+    mkdir -p "$HARAKA_DATA" && \
+    chmod -R 0777 "$HARAKA_LOGS" && \
+    chmod -R 0777 "$HARAKA_DATA" && \
+    chown -R haraka:haraka "$HARAKA_HOME" "$HARAKA_LOGS" "$HARAKA_DATA"
 
-ENV HOME /app
-ENV HARAKA /app
+ENV HOME "$HARAKA_HOME"
 
 WORKDIR /app
 VOLUME ["/logs", "/data"]
 
 EXPOSE 25
 
-ENTRYPOINT ["/usr/local/bin/haraka-wrapper", "--configs", "/app"]
-CMD []
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
+CMD [""]
