@@ -4,16 +4,10 @@
 FROM node:0.10
 MAINTAINER Gordon Bleux <gordon.bleux+dh@gmail.com> (@gbleux)
 
-ENV PATH /usr/local/bin:$PATH
-ENV HARAKA_VERSION 2.5.0
 ENV HARAKA_HOME /app
 ENV HARAKA_LOGS /logs
 ENV HARAKA_DATA /data
-
-# node-gyp emits lots of warnings if HOME is set to /
-ENV HOME /tmp
-RUN npm install -g "Haraka@$HARAKA_VERSION"
-RUN haraka --install "$HARAKA_HOME"
+ENV PATH /usr/local/bin:$HARAKA_HOME/node_modules/.bin:$PATH
 
 # the application is not started as this user,
 # but Haraka can be configured to drop its privileges
@@ -26,6 +20,12 @@ RUN groupadd -r haraka && \
             -r \
             -M \
             haraka
+
+# node-gyp emits lots of warnings if HOME is set to /
+ENV HOME /tmp
+ENV HARAKA_VERSION 2.5.0
+RUN npm install -g "Haraka@$HARAKA_VERSION"
+RUN haraka --install "$HARAKA_HOME"
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 COPY config /app/config
