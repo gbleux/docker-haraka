@@ -60,12 +60,7 @@ haraka_chmod() {
 # postfix using the 'date' command. the default is to use 'date +%s' as
 # the filename postfix.
 configure_log_filename() {
-    HARAKA_LOG_IDENT=`date +%s`
-
-    if test "x$HARAKA_LOG_DATE_FORMAT" != "x";then
-        HARAKA_LOG_IDENT=`date +"$HARAKA_LOG_DATE_FORMAT"`
-    fi
-
+    HARAKA_LOG_IDENT=$(date +"${HARAKA_LOG_DATE_FORMAT:-s}")
     HARAKA_LOG="haraka-${HARAKA_LOG_IDENT}.log"
 }
 
@@ -103,16 +98,34 @@ validate_haraka_env() {
     return 0
 }
 
+exec_haraka() {
+    validate_haraka_env || exit 1
+    haraka_bootstrap || exit 2
+
+    # tee outout so 'docker logs' and 'tail -f $LOG_VOLUME/haraka.log' works
+    exec "$HARAKA_BIN" "$@" 2>&1 | tee "$HARAKA_LOGS/$HARAKA_LOG"
+}
+
+exec_help() {
+    echo "Either run this command without any parameters to execute"
+    echo "Haraka or specify the command which should be invoked."
+
+    exit 0
+}
+
 # script entry point
 main() {
-    if test "$1" = 'haraka' -o $# -eq 0; then
-        validate_haraka_env || exit 1
-        haraka_bootstrap || exit 2
-
-        exec "$HARAKA_BIN" "$@" 2>&1 | tee "$HARAKA_LOGS/$HARAKA_LOG"
-    else
-        exec "$@"
-    fi
+    case "${1:-haraka}" in
+        [hH]araka)
+            exec_haraka
+            ;;
+        --help|-h|-?)
+            exec_help
+            ;;
+        *)
+            exec "$@"
+            ;;
+    esac
 }
 
 main "$@"
