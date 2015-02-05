@@ -29,6 +29,7 @@ RUN haraka --install "$HARAKA_HOME"
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 COPY config /app/config
+RUN chmod 0755 /usr/local/bin/docker-entrypoint
 RUN mkdir -p "$HARAKA_HOME" && \
     mkdir -p "$HARAKA_LOGS" && \
     mkdir -p "$HARAKA_DATA" && \
